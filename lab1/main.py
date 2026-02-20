@@ -23,7 +23,6 @@ def get_elevation_data(locations):
         return data["results"]
     except Exception:
         print("Помилка API. Використовую заглушку.")
-        # Фейкові дані на випадок відсутності інтернету
         return [{'latitude': 0, 'longitude': 0, 'elevation': 1000 + i*10} for i in range(len(locations))]
 
 results = get_elevation_data(locations_list)
@@ -46,7 +45,7 @@ for i in range(1, len(results)):
     d = haversine(lats[i-1], lons[i-1], lats[i], lons[i])
     distances.append(distances[-1] + d)
 
-# Запис результатів у файл (Пункт 3)
+# Запис результатів у файл
 with open("lab1_results.txt", "w", encoding="utf-8") as f:
     f.write("Index | Elevation (m) | Distance (m)\n")
     f.write("-" * 40 + "\n")
@@ -88,7 +87,7 @@ def compute_splines(x_nodes, y_nodes):
         
     return a, b, c[:-1], d
 
-# Функція для виводу коефіцієнтів у консоль (Пункт 8-9)
+# Функція для виводу коефіцієнтів у консоль
 def print_coefficients(x_full, y_full):
     a, b, c, d = compute_splines(np.array(x_full), np.array(y_full))
     print("\n--- Коефіцієнти сплайнів (для повного набору) ---")
@@ -99,7 +98,6 @@ def print_coefficients(x_full, y_full):
 
 # Функція малювання графіка
 def plot_interpolation(x_full, y_full, num_nodes, color):
-    # Вибираємо вузли рівномірно
     indices = np.linspace(0, len(x_full)-1, num_nodes, dtype=int)
     x_nodes = np.array(x_full)[indices]
     y_nodes = np.array(y_full)[indices]
@@ -131,7 +129,7 @@ print_coefficients(distances, elevations)
 
 plt.figure(figsize=(12, 8))
 
-# 1. Еталонні дані (Пунктирна лінія з точками) - як ти просив
+# 1. Еталонні дані (Пунктирна лінія з точками)
 plt.plot(distances, elevations, 'o--', color='black', alpha=0.3, label='Еталонні дані (Всі точки)', zorder=0)
 
 # 2. Сплайни за завданням
