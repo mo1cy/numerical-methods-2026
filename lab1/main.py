@@ -46,12 +46,12 @@ for i in range(1, len(results)):
     distances.append(distances[-1] + d)
 
 # Запис результатів у файл
-with open("lab1_results.txt", "w", encoding="utf-8") as f:
-    f.write("Index | Elevation (m) | Distance (m)\n")
-    f.write("-" * 40 + "\n")
-    for i in range(len(results)):
-        f.write(f"{i:5d} | {elevations[i]:13.2f} | {distances[i]:12.2f}\n")
-print("Дані записано у lab1_results.txt")
+# with open("lab1_results.txt", "w", encoding="utf-8") as f:
+#     f.write("Index | Elevation (m) | Distance (m)\n")
+#     f.write("-" * 40 + "\n")
+#     for i in range(len(results)):
+#         f.write(f"{i:5d} | {elevations[i]:13.2f} | {distances[i]:12.2f}\n")
+# print("Дані записано у lab1_results.txt")
 
 # --- 3. КУБІЧНІ СПЛАЙНИ (МЕТОД ПРОГОНКИ) ---
 def compute_splines(x_nodes, y_nodes):
@@ -142,7 +142,7 @@ plt.xlabel("Відстань (м)")
 plt.ylabel("Висота (м)")
 plt.legend()
 plt.grid(True)
-plt.savefig("lab1_plot.png") # Зберігаємо графік у файл
+# plt.savefig("lab1_plot.png") # Зберігаємо графік у файл
 print("\nГрафік збережено у 'lab1_plot.png' і виведено на екран.")
 plt.show()
 
