@@ -2,7 +2,7 @@ import requests
 import numpy as np
 import matplotlib.pyplot as plt
 
-# --- 1. ОТРИМАННЯ ДАНИХ ---
+#1. отримання даних
 locations_list = [
     "48.164214,24.536044", "48.164983,24.534836", "48.165605,24.534068",
     "48.166228,24.532915", "48.166777,24.531927", "48.167326,24.530884",
@@ -14,7 +14,7 @@ locations_list = [
 ]
 
 def get_elevation_data(locations):
-    # Формуємо URL для запиту
+    # формуємо URL для запиту
     url = "https://api.open-elevation.com/api/v1/lookup?locations=" + "|".join(locations)
     try:
         print("Запит до API...")
@@ -27,9 +27,9 @@ def get_elevation_data(locations):
 
 results = get_elevation_data(locations_list)
 
-# --- 2. ОБЧИСЛЕННЯ ВІДСТАНЕЙ (Haversine) ---
+#2. обчислення відстаней (Haversine)
 def haversine(lat1, lon1, lat2, lon2):
-    R = 6371000  # Радіус Землі
+    R = 6371000  # радіус Землі
     phi1, phi2 = np.radians(lat1), np.radians(lat2)
     dphi = np.radians(lat2 - lat1)
     dlambda = np.radians(lon2 - lon1)
@@ -53,7 +53,7 @@ for i in range(1, len(results)):
 #         f.write(f"{i:5d} | {elevations[i]:13.2f} | {distances[i]:12.2f}\n")
 # print("Дані записано у lab1_results.txt")
 
-# --- 3. КУБІЧНІ СПЛАЙНИ (МЕТОД ПРОГОНКИ) ---
+# 3. кубічні сплайни(МЕТОД ПРОГОНКИ)
 def compute_splines(x_nodes, y_nodes):
     n = len(x_nodes) - 1
     h = np.diff(x_nodes)
@@ -62,7 +62,7 @@ def compute_splines(x_nodes, y_nodes):
     alpha = np.zeros(n)
     beta = np.zeros(n)
     
-    # Прямий хід прогонки
+    # прямий хід прогонки
     for i in range(1, n):
         A_i = h[i-1]
         C_diag = 2 * (h[i-1] + h[i])
@@ -73,7 +73,7 @@ def compute_splines(x_nodes, y_nodes):
         alpha[i] = -B_i / denom
         beta[i] = (F_i - A_i * beta[i-1]) / denom
 
-    # Зворотний хід прогонки
+    # зворотний хід прогонки
     c = np.zeros(n + 1)
     c[n] = 0
     for i in range(n - 1, 0, -1):
@@ -87,7 +87,7 @@ def compute_splines(x_nodes, y_nodes):
         
     return a, b, c[:-1], d
 
-# Функція для виводу коефіцієнтів у консоль
+# функція для виводу коефіцієнтів у консоль
 def print_coefficients(x_full, y_full):
     a, b, c, d = compute_splines(np.array(x_full), np.array(y_full))
     print("\n--- Коефіцієнти сплайнів (для повного набору) ---")
@@ -96,7 +96,7 @@ def print_coefficients(x_full, y_full):
     for i in range(len(a)):
         print(f"{i:<3} | {a[i]:<10.2f} | {b[i]:<10.2f} | {c[i]:<10.4f} | {d[i]:<10.6f}")
 
-# Функція малювання графіка
+# функція малювання графіка
 def plot_interpolation(x_full, y_full, num_nodes, color):
     indices = np.linspace(0, len(x_full)-1, num_nodes, dtype=int)
     x_nodes = np.array(x_full)[indices]
@@ -107,7 +107,7 @@ def plot_interpolation(x_full, y_full, num_nodes, color):
     x_smooth = []
     y_smooth = []
     
-    # Генеруємо гладку лінію сплайна
+    # генеруємо гладку лінію сплайна
     for i in range(len(x_nodes) - 1):
         xs = np.linspace(x_nodes[i], x_nodes[i+1], 20)
         for val in xs:
@@ -118,21 +118,21 @@ def plot_interpolation(x_full, y_full, num_nodes, color):
             
     plt.plot(x_smooth, y_smooth, label=f'Сплайн ({num_nodes} вузлів)', linewidth=2, color=color, alpha=0.8)
     
-    # Малюємо вузли тільки для найменшого сплайна, щоб не засмічувати графік
+    # малюємо вузли тільки для найменшого сплайна
     if num_nodes == 10:
         plt.scatter(x_nodes, y_nodes, s=40, marker='x', color=color, zorder=5)
 
-# --- 4. ГОЛОВНА ЧАСТИНА ---
+# 4. інтерполяція та вивід результатів
 
-# Виводимо таблицю коефіцієнтів
+# виводимо таблицю коефіцієнтів
 print_coefficients(distances, elevations)
 
 plt.figure(figsize=(12, 8))
 
-# 1. Еталонні дані (Пунктирна лінія з точками)
+# 1. еталонні дані (Пунктирна лінія з точками)
 plt.plot(distances, elevations, 'o--', color='black', alpha=0.3, label='Еталонні дані (Всі точки)', zorder=0)
 
-# 2. Сплайни за завданням
+# 2. сплайни за завданням
 plot_interpolation(distances, elevations, 10, 'red')
 plot_interpolation(distances, elevations, 15, 'green')
 plot_interpolation(distances, elevations, 20, 'blue')
@@ -146,7 +146,7 @@ plt.grid(True)
 print("\nГрафік збережено у 'lab1_plot.png' і виведено на екран.")
 plt.show()
 
-# --- 5. ДОДАТКОВІ ЗАВДАННЯ (Енергія і градієнти) ---
+# 5. додаткові обчислення
 total_ascent = sum(max(elevations[i] - elevations[i-1], 0) for i in range(1, len(elevations)))
 grads = np.gradient(elevations, distances) * 100
 energy_kcal = (80 * 9.81 * total_ascent) / 4184
@@ -155,3 +155,40 @@ print(f"\n--- Підсумки ---")
 print(f"Набір висоти: {total_ascent:.2f} м")
 print(f"Макс. крутизна: {np.max(grads):.2f}%")
 print(f"Витрачена енергія (80кг): {energy_kcal:.2f} ккал")
+
+# 6. графік похибки інтерполяції
+def calculate_spline_value(x_val, x_nodes, a, b, c, d):
+    # знаходимо, в який інтервал потрапляє x_val
+    for i in range(len(x_nodes) - 1):
+        if x_nodes[i] <= x_val <= x_nodes[i+1]:
+            dx = x_val - x_nodes[i]
+            return a[i] + b[i]*dx + c[i]*(dx**2) + d[i]*(dx**3)
+    return a[-1] # на випадок заокруглень на кінцях
+
+def plot_error(x_full, y_full, num_nodes, color):
+    indices = np.linspace(0, len(x_full)-1, num_nodes, dtype=int)
+    x_nodes = np.array(x_full)[indices]
+    y_nodes = np.array(y_full)[indices]
+    
+    a, b, c, d = compute_splines(x_nodes, y_nodes)
+    
+    errors = []
+    # обчислюємо похибку для кожної з 21 реальної точки
+    for i in range(len(x_full)):
+        y_approx = calculate_spline_value(x_full[i], x_nodes, a, b, c, d)
+        error = abs(y_full[i] - y_approx)
+        errors.append(error)
+        
+    plt.plot(x_full, errors, label=f'Похибка ({num_nodes} вузлів)', color=color, marker='o', markersize=4)
+
+plt.figure(figsize=(12, 6))
+plot_error(distances, elevations, 10, 'red')
+plot_error(distances, elevations, 15, 'green')
+plot_error(distances, elevations, 20, 'blue')
+
+plt.title("Графік абсолютної похибки інтерполяції ε = |y - S(x)|")
+plt.xlabel("Відстань (м)")
+plt.ylabel("Похибка (м)")
+plt.legend()
+plt.grid(True)
+plt.show()
