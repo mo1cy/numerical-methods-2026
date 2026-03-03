@@ -4,11 +4,9 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import CubicSpline
 import os
 
-# зчитування даних з csv
+# 1. Зчитування даних 
 def read_data(filename):
-    # oтримуємо точний шлях до папки, де лежить поточний скрипт main.py
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    # зліплюємо шлях до папки з назвою нашого файлу
     file_path = os.path.join(current_dir, filename)
     x, y = [], []
     with open(file_path, 'r', encoding='utf-8') as file:
@@ -20,7 +18,7 @@ def read_data(filename):
 
 x_data, y_data = read_data('data.csv')
 
-# oбчислення розділених різниць
+# 2. Метод Ньютона
 def divided_differences(x, y):
     n = len(y)
     coef = np.zeros([n, n])
@@ -30,7 +28,6 @@ def divided_differences(x, y):
             coef[i][j] = (coef[i+1][j-1] - coef[i][j-1]) / (x[i+j] - x[i])
     return coef[0, :]
 
-# інтерполяційний многочлен Ньютона
 def newton_poly(coef, x_data, x):
     n = len(coef) - 1
     p = coef[n]
@@ -38,47 +35,112 @@ def newton_poly(coef, x_data, x):
         p = coef[n-k] + (x - x_data[n-k]) * p
     return p
 
-coef = divided_differences(x_data, y_data)
+# --- 3. Метод Лагранжа 
+def lagrange_poly(x_nodes, y_nodes, x_val):
+    result = 0.0
+    n = len(x_nodes)
+    for i in range(n):
+        term = y_nodes[i]
+        for j in range(n):
+            if i != j:
+                term *= (x_val - x_nodes[j]) / (x_nodes[i] - x_nodes[j])
+        result += term
+    return result
 
-# прогноз часу тренування для 120000
+# Підготовка: Сплайн як "еталон" для досліджень похибок
+true_func = CubicSpline(x_data, y_data)
+# Точки для плавного малювання графіків
+x_vals_plot = np.linspace(min(x_data), max(x_data), 500)
+
+# Розрахунок коефіцієнтів Ньютона для основного графіку
+coef = divided_differences(x_data, y_data)
 x_target = 120000
 y_pred = newton_poly(coef, x_data, x_target)
-print(f"Прогнозований час для датасету {x_target}: {y_pred:.2f} сек")
 
-# побудова основного графіка
-x_vals = np.linspace(min(x_data), max(x_data), 500)
-y_vals = [newton_poly(coef, x_data, xi) for xi in x_vals]
+print(f"Прогноз для 120000: {y_pred:.4f} сек")
 
+# ГРАФІК 1: ОСНОВНИЙ ПРОГНОЗ
 plt.figure(figsize=(10, 6))
-plt.plot(x_vals, y_vals, label="Поліном Ньютона", color='blue')
-plt.scatter(x_data, y_data, color='red', s=50, zorder=5, label="Експериментальні дані")
-plt.scatter(x_target, y_pred, color='green', marker='X', s=100, zorder=5, label=f"Прогноз (x={x_target})")
-plt.title("Прогнозування часу тренування моделі")
+plt.title("Графік 1: Інтерполяція Ньютона та Прогноз")
+
+# Малюємо лінію полінома
+y_vals_newton = [newton_poly(coef, x_data, xi) for xi in x_vals_plot]
+plt.plot(x_vals_plot, y_vals_newton, label="Поліном Ньютона", color='blue')
+
+# Малюємо точки
+plt.scatter(x_data, y_data, color='red', s=50, zorder=5, label="Дані з CSV")
+plt.scatter(x_target, y_pred, color='green', marker='X', s=150, zorder=6, label=f"Прогноз ({y_pred:.1f})")
+
 plt.xlabel("Розмір датасету")
 plt.ylabel("Час (сек)")
 plt.legend()
 plt.grid(True)
-plt.show()
 
-# дослідження ефекту Рунге та похибок (n=5, 10, 20)
-# використовуємо кубічний сплайн як "еталонну" криву для генерації вузлів
-true_func = CubicSpline(x_data, y_data)
 
+# ГРАФІК 2: ЕФЕКТ РУНГЕ (Фіксований інтервал)
 plt.figure(figsize=(10, 6))
+plt.title("Графік 2: Ефект Рунге (Фіксований інтервал [10k, 160k])")
+
 for n in [5, 10, 20]:
     x_nodes = np.linspace(min(x_data), max(x_data), n)
     y_nodes = true_func(x_nodes)
     
     coef_n = divided_differences(x_nodes, y_nodes)
-    y_interp = [newton_poly(coef_n, x_nodes, xi) for xi in x_vals]
+    y_interp = [newton_poly(coef_n, x_nodes, xi) for xi in x_vals_plot]
     
-    error = np.abs(true_func(x_vals) - y_interp)
-    plt.plot(x_vals, error, label=f"Похибка при n={n}")
+    error = np.abs(true_func(x_vals_plot) - y_interp)
+    plt.plot(x_vals_plot, error, label=f"n={n} вузлів")
 
-plt.title("Дослідження похибки інтерполяції (Ефект Рунге)")
 plt.xlabel("Розмір датасету")
-plt.ylabel("Абсолютна похибка")
-plt.yscale("log") 
+plt.ylabel("Похибка (лог. шкала)")
+plt.yscale("log")
 plt.legend()
 plt.grid(True)
+
+
+# ГРАФІК 3: ЗМІННИЙ ІНТЕРВАЛ (Фіксований крок)
+plt.figure(figsize=(10, 6))
+plt.title("Графік 3: Фіксований крок h=10k (Змінний інтервал)")
+
+h = 10000
+start = min(x_data)
+
+for n in [5, 10, 15]:
+    # Формуємо вузли зі сталим кроком
+    x_nodes = np.array([start + i*h for i in range(n)])
+    y_nodes = true_func(x_nodes)
+    
+    coef_n = divided_differences(x_nodes, y_nodes)
+    
+    # Малюємо тільки в межах поточного інтервалу
+    current_x_plot = np.linspace(min(x_nodes), max(x_nodes), 200)
+    y_interp = [newton_poly(coef_n, x_nodes, xi) for xi in current_x_plot]
+    
+    error = np.abs(true_func(current_x_plot) - y_interp)
+    plt.plot(current_x_plot, error, label=f"n={n} (до {int(x_nodes[-1])})")
+
+plt.xlabel("Розмір датасету")
+plt.ylabel("Похибка (лог. шкала)")
+plt.yscale("log")
+plt.legend()
+plt.grid(True)
+
+
+# ГРАФІК 4: ВІЗУАЛЬНЕ ПОРІВНЯННЯ (Дві лінії)
+plt.figure(figsize=(10, 6))
+plt.title("Графік 4: Візуальне порівняння Ньютона та Лагранжа")
+
+# 1. Малюємо Ньютона (товста синя лінія)
+# Ми вже рахували y_vals_newton для першого графіка, беремо їх звідти
+plt.plot(x_vals_plot, y_vals_newton, label="Метод Ньютона", color='blue', linewidth=5, alpha=0.3)
+
+# 2. Малюємо Лагранжа (червоний пунктир поверх)
+y_vals_lagrange = [lagrange_poly(x_data, y_data, xi) for xi in x_vals_plot]
+plt.plot(x_vals_plot, y_vals_lagrange, label="Метод Лагранжа", color='red', linestyle='--', linewidth=2)
+
+plt.xlabel("Розмір датасету")
+plt.ylabel("Час (сек)")
+plt.legend()
+plt.grid(True)
+
 plt.show()
