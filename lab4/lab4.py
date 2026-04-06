@@ -91,7 +91,7 @@ if denominator != 0:
     y_E = numerator / denominator
     R3 = abs(y_E - exact_val)
     
-    # рахуємо порядок точності
+    #порядок точності
     ratio = abs((y_4h - y_2h) / (y_2h - y_h))
     p_order = (1 / math.log(2)) * math.log(ratio)
     
