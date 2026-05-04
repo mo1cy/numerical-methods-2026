@@ -1,40 +1,35 @@
 import random
 
-# ====================================================================
-# ПУНКТ 1: Генерація матриці А з діагональним переважанням та вектора В
-# ====================================================================
 def generate_and_write_data(n, exact_x):
     with open("A.txt", "w") as file_a, open("B.txt", "w") as file_b:
         A = []
         for i in range(n):
             row = []
             sum_row_abs = 0
-            # Спочатку генеруємо випадкові числа
+            #спочатку генеруємо випадкові числа
             for j in range(n):
                 if i != j:
                     val = random.uniform(-10.0, 10.0)
                     row.append(val)
                     sum_row_abs += abs(val)
                 else:
-                    row.append(0.0) # Заглушка для діагоналі
+                    row.append(0.0)
             
-            # Робимо строге діагональне переважання: діагональ > суми інших елементів
+            #робимо строге діагональне переважання: діагональ > суми інших елементів
             diag_val = sum_row_abs + random.uniform(10.0, 50.0)
             row[i] = diag_val
             
-            # Обчислюємо вектор B
+            #обчислюємо вектор B
             sum_b = sum(row[j] * exact_x for j in range(n))
             A.append(row)
             
-            # Запис у файли
+            #запис у файли
             file_a.write(" ".join(f"{v:.6f}" for v in row) + "\n")
             file_b.write(f"{sum_b:.6f}\n")
             
     print("Файли A.txt та B.txt успішно згенеровано (з діагональним переважанням).")
 
-# ====================================================================
-# ПУНКТ 2: Допоміжні функції (зчитування, норми, добутки)
-# ====================================================================
+
 def read_matrix(filename):
     A = []
     with open(filename, "r") as f:
@@ -61,19 +56,15 @@ def calculate_vector_norm(V):
     return max(abs(v) for v in V)
 
 def calculate_matrix_norm(A, n):
-    # Норма матриці ||A||_1 (максимальна сума модулів елементів по рядках)
     return max(sum(abs(x) for x in row) for row in A)
 
-# ====================================================================
-# Ітераційні методи розв'язку СЛАР
-# ====================================================================
 
-# Метод простої ітерації
+#метод простої ітерації
 def solve_simple_iteration(A, B, n, eps):
-    X = [1.0] * n # ПУНКТ 3: Початкове наближення
+    X = [1.0] * n #початкове наближення
     iterations = 0
     
-    # Знаходимо параметр tau: 0 < tau < 2/||A||
+    #знаходимо параметр tau: 0 < tau < 2/||A||
     tau = 1.0 / calculate_matrix_norm(A, n) 
     
     while True:
@@ -95,9 +86,9 @@ def solve_simple_iteration(A, B, n, eps):
             break
     return X, iterations
 
-# Метод Якобі
+#метод Якобі
 def solve_jacobi(A, B, n, eps):
-    X = [1.0] * n # Початкове наближення
+    X = [1.0] * n 
     iterations = 0
     
     while True:
@@ -105,7 +96,7 @@ def solve_jacobi(A, B, n, eps):
         X_new = [0.0] * n
         
         for i in range(n):
-            # Сума всіх елементів рядка, крім діагонального
+            #сума всіх елементів рядка, крім діагонального
             s = sum(A[i][j] * X[j] for j in range(n) if j != i)
             X_new[i] = (B[i] - s) / A[i][i]
             
@@ -120,9 +111,9 @@ def solve_jacobi(A, B, n, eps):
             break
     return X, iterations
 
-# Метод Гауса-Зейделя
+#метод Гауса-Зейделя
 def solve_seidel(A, B, n, eps):
-    X = [1.0] * n # Початкове наближення
+    X = [1.0] * n
     iterations = 0
     
     while True:
@@ -146,15 +137,13 @@ def solve_seidel(A, B, n, eps):
             break
     return X, iterations
 
-# ====================================================================
-# ГОЛОВНА ФУНКЦІЯ
-# ====================================================================
+
 def main():
     n = 100
     exact_x = 2.5
-    eps0 = 1e-14 # ПУНКТ 4: Задана точність
+    eps0 = 1e-14 #задана точність
     
-    # 1. Генерація та зчитування даних
+    #зчитування даних
     generate_and_write_data(n, exact_x)
     A = read_matrix("A.txt")
     B = read_vector("B.txt")
@@ -163,20 +152,20 @@ def main():
     print(f"Початкове наближення x_i = 1.0, Точність eps = {eps0}")
     print("-" * 50)
     
-    # 4. Знаходження уточненого розв'язку кожним із методів
+    #знаходження уточненого розв'язку кожним із методів
     # Метод простої ітерації
     X_si, iters_si = solve_simple_iteration(A, B, n, eps0)
     print(f"1. Метод простої ітерації:")
     print(f"   Ітерацій: {iters_si}")
     print(f"   Перевірка X[0] = {X_si[0]:.5f}, X[{n-1}] = {X_si[-1]:.5f}\n")
 
-    # Метод Якобі
+    #метод Якобі
     X_jacobi, iters_jacobi = solve_jacobi(A, B, n, eps0)
     print(f"2. Метод Якобі:")
     print(f"   Ітерацій: {iters_jacobi}")
     print(f"   Перевірка X[0] = {X_jacobi[0]:.5f}, X[{n-1}] = {X_jacobi[-1]:.5f}\n")
 
-    # Метод Зейделя
+    #метод Зейделя
     X_seidel, iters_seidel = solve_seidel(A, B, n, eps0)
     print(f"3. Метод Зейделя:")
     print(f"   Ітерацій: {iters_seidel}")
